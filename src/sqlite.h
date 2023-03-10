@@ -1,3 +1,6 @@
+#ifndef SQLITE_H
+#define SQLITE_H
+
 #include <sqlite3.h>
 #include <Arduino.h>
 #include <iostream>
@@ -48,3 +51,5 @@ int db_exec(sqlite3 *db, const char *sql) {
    Serial.println(micros()-start);
    return rc;
 }
+
+#endif

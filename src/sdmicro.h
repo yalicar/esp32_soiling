@@ -1,9 +1,11 @@
+#ifndef SDMICRO_H
+#define SDMICRO_H
+
 #include "SD.h"
 #include <Arduino.h>
 
 // define SD card chip select pin
 #define SD_CS 5
-
 
  // SD card
 void setup_sd() {
@@ -16,3 +18,5 @@ void setup_sd() {
     Serial.println("ERROR - SD card initialization failed!");
   }
 }
+
+#endif

@@ -1,3 +1,5 @@
+#ifndef BME280_H
+#define BME280_H
 #include  "Adafruit_BME280.h"
 
 // BME280 sensor
@@ -43,3 +45,5 @@ void read_bme280() {
   Serial.println();
   delay(2000);
 }
+
+#endif
