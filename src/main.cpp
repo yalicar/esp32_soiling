@@ -2,39 +2,27 @@
 #include <Adafruit_BME280.h>
 #include <Wire.h>
 #include <SPI.h>
-#include <sqlite3.h>
 #include "SD.h"
-#include "bme280.h"
 #include "DHT.h"
+#include "time.h"
+#include <string>
+#include <iostream>
+
+#include "bme280.h"
+#include "sdmicro.h"
+#include "sqlite.h"
+
+using namespace std;
 
 
 // set pin modes for SD card reader
-// SD pin
-#define SD_CS 5
+
 // DHT22 pin
 #define DHTPIN 4
 #define DHTTYPE DHT22
 DHT dht(DHTPIN, DHTTYPE);
-// sqlite3 database connection
-sqlite3 *db;
-char *zErrMsg = 0;
-int rc;
-char *sql;
-const char* data = "Callback function called";
 
- // SD card
-void setup_sd() {
-  Serial.begin(9600);
-  Serial.println("");
-  Serial.println("Initializing SD card...");
-  if (SD.begin(SD_CS)) {
-    Serial.println("SD card initialized.");
-  } else {
-    Serial.println("ERROR - SD card initialization failed!");
-  }
-}
-
-  // dht22
+// dht22
 void setup_dht22() {
   Serial.begin(9600);
   Serial.println("");
@@ -47,48 +35,46 @@ void setup_dht22() {
   }
 }
 
-// callback function
-static int callback(void *data, int argc, char **argv, char **azColName) {
-  Serial.begin(9600);
-  int i;
-  fprintf(stderr, "%s: ", (const char*)data);
-  for (i = 0; i < argc; i++) {
-    printf("%s = %s ", azColName[i], argv[i] ? argv[i] : "NULL");
-  }
-  Serial.println("");
-  return 0;
-}
 
-// open database
-void open_db() {
-  Serial.begin(9600);
-  Serial.println("");
-  rc = sqlite3_open("/sd/names.db", &db);
-  if (rc) {
-    Serial.println("Can't open database: ");
-    sqlite3_close(db);
-    exit(1);
-  } else {
-    Serial.println("Opened database successfully ");
-  }
-}
 
-// create table function that receives the table name as a parameter
-void create_table() {
-  Serial.begin(9600);
+void setup() {
+  // put your setup code here, to run once:
   Serial.println("");
-  sql = "CREATE TABLE IF NOT EXISTS DHT22(" \
+  setup_bme280();
+  setup_sd();
+  openDb("/sd/bme280.db", &db);
+  // crate table if not exists in database bme280.db in SD card 
+  const char* sql = "CREATE TABLE IF NOT EXISTS bme280("  \
         "ID INTEGER PRIMARY KEY AUTOINCREMENT," \
-        "TEMPERATURE REAL NOT NULL," \
-        "HUMIDITY REAL NOT NULL," \
-        "TIME TEXT NOT NULL);";
-  rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    Serial.println("SQL error: ");
-    sqlite3_free(zErrMsg);
-  } else {
-    Serial.println("Table created successfully ");
+        "TEMPERATURE           REAL    NOT NULL," \
+        "HUMIDITY              REAL    NOT NULL," \
+        "PRESSURE              REAL    NOT NULL," \
+        "ALTITUDE              REAL    NOT NULL," \
+        "TIME                  TEXT    NOT NULL);";
+  db_exec(db, sql);
+}
+// get time and hour from the internet
+void get_time() {
+  configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+  Serial.println("Waiting for NTP time sync: ");
+  time_t now = time(nullptr);
+  while (now < 8 * 3600 * 2) {
+    delay(500);
+    Serial.print(".");
+    now = time(nullptr);
   }
+  Serial.println("");
+  Serial.print("Current time: ");
+  Serial.println(ctime(&now));
+} 
+void loop() {
+  // put your main code here, to run repeatedly:
+  string sql_bme_insert = "INSERT INTO bme280 (TEMPERATURE,HUMIDITY,PRESSURE,ALTITUDE,TIME) "  \
+        "VALUES ("+ to_string(bme.readTemperature()) + "," + to_string(bme.readHumidity()) + "," + to_string(bme.readPressure() / 100.0F) + "," + to_string(bme.readAltitude(SEALEVELPRESSURE_HPA)) + "," + to_string(time(nullptr)) + ");";
+  const char* sql2 = sql_bme_insert.c_str();
+  db_exec(db, sql2);
+  delay(1000);
+
 }
 
 // insert data function into the table
@@ -96,49 +82,13 @@ void insert_data() {
   Serial.begin(9600);
   Serial.println("");
   // insert dht22 data into the table , the time is inserted automatically by the database 
-  sql = "INSERT INTO DHT22 (TEMPERATURE, HUMIDITY, TIME) VALUES ("+float(dht.readTemperature())+","+float(dht.readHumidity())+",datetime('now'));";
-  rc = sqlite3_exec(db, sql, callback, 0, &zErrMsg);
+  string sql = "INSERT INTO DHT222 (TEMPERATURE,HUMIDITY) VALUES (" + to_string(dht.readTemperature()) + "," + to_string(dht.readHumidity()) + ");";
+  const char* sql2 = sql.c_str();
+  rc = sqlite3_exec(db, sql2, callback, 0, &zErrMsg);
   if (rc != SQLITE_OK) {
     Serial.println("SQL error: ");
     sqlite3_free(zErrMsg);
   } else {
     Serial.println("Records created successfully ");
   }
-}
-
-// read data from the table and print it to the serial monitor
-void read_data() {
-  Serial.begin(9600);
-  Serial.println("");
-  sql = "SELECT * from DHT22;";
-  rc = sqlite3_exec(db, sql, callback, (void*)data, &zErrMsg);
-  if (rc != SQLITE_OK) {
-    Serial.println("SQL error: ");
-    sqlite3_free(zErrMsg);
-  } else {
-    Serial.println("");
-    Serial.println("Operation done successfully ");
-  }
-}
-
-
-
-void setup() {
-  // put your setup code here, to run once:
-  //setup_bme280();
-  // sqlite3 database connection 
-
-  delay(1000);
-  setup_sd();
-  setup_dht22();
-  open_db();
-  create_table();
-  insert_data();
-}
-
-void loop() {
-  // put your main code here, to run repeatedly:
-  //read_bme280();
-  //read_data();
-  delay(2000);
 }
