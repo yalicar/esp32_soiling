@@ -45,11 +45,10 @@ int db_exec(sqlite3 *db, const char *sql) {
        Serial.printf("SQL error: %s\n", zErrMsg);
        sqlite3_free(zErrMsg);
    } else {
-       Serial.printf("Operation done successfully\n");
+       Serial.printf("Operation exc done successfully\n");
    }
-   Serial.print(F("Time taken:"));
-   Serial.println(micros()-start);
+   Serial.print(F("Time taken to execute query ms: "));
+   Serial.println((micros() - start) / 1000);
    return rc;
 }
-
 #endif

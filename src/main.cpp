@@ -21,7 +21,13 @@ void setup() {
   // wifi setup
   delay(1000);
   Serial.println("");
-  setup_wifi("504", "cardenas16V");
+  int estatus = setup_wifi("CLARO1_8D971B", "0s3WtDtFLq");
+  // stop all processes if wifi connection fails
+  if (estatus != 0) {
+    Serial.println("WiFi connection failed");
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
+    esp_restart();
+  }
   Serial.println("");
   setup_time();
   // setup bme280 sensor
@@ -41,15 +47,13 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  /*
   string sql_bme_insert = "INSERT INTO bme280 (TEMPERATURE,HUMIDITY,PRESSURE,ALTITUDE,TIME) "  \
-        "VALUES ("+ to_string(bme.readTemperature()) + "," + to_string(bme.readHumidity()) + "," + to_string(bme.readPressure() / 100.0F) + "," + to_string(bme.readAltitude(SEALEVELPRESSURE_HPA)) + "," + to_string(time(nullptr)) + ");";
+        "VALUES ("+ to_string(bme.readTemperature()) + "," + to_string(bme.readHumidity()) + "," \
+        + to_string(bme.readPressure() / 100.0F) + "," + to_string(bme.readAltitude(SEALEVELPRESSURE_HPA)) + "," \
+        + "'" + string(get_time().c_str()) + "'" + ");";
   const char* sql2 = sql_bme_insert.c_str();
   db_exec(db, sql2);
-  delay(1000);
-  */
  // print date and time 
-  time_t now = time(nullptr);
-  Serial.println(ctime(&now));
+  Serial.println(get_time());
   delay(1000);
 }

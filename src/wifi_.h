@@ -3,7 +3,7 @@
 
 #include <WiFi.h>
 
-void setup_wifi(const char *ssid, const char *password) {
+int  setup_wifi(const char *ssid, const char *password) {
   delay(10);
   // We start by connecting to a WiFi network
   Serial.println();
@@ -16,11 +16,16 @@ void setup_wifi(const char *ssid, const char *password) {
     delay(500);
     Serial.print(".");
   }
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi connection failed");
+    return -1;
+  }
 
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+  return 0;
 }
 
 // get date and time from ntp server utc - 6
@@ -36,5 +41,17 @@ void setup_time() {
   Serial.println("");
   Serial.println("Time has been synced");
 }
+
+// format time to string yyyy-mm-dd hh:mm:ss and return string
+String get_time() {
+  time_t now = time(nullptr);
+  struct tm timeinfo;
+  localtime_r(&now, &timeinfo);
+  char strftime_buf[64];
+  strftime(strftime_buf, sizeof(strftime_buf), "%Y-%m-%d %H:%M:%S", &timeinfo);
+  return String(strftime_buf);
+}
+
+
 
 #endif

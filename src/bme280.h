@@ -13,7 +13,7 @@ float altitude_bme280;
 
 // Function setup bme280 sensor function
 void setup_bme280() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("BME280 Sensor Test");
   bool status;
   // default settings

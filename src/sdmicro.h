@@ -9,7 +9,7 @@
 
  // SD card
 void setup_sd() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("");
   Serial.println("Initializing SD card...");
   if (SD.begin(SD_CS)) {
