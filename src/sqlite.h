@@ -38,17 +38,33 @@ int openDb(const char *filename, sqlite3 **db) {
    return rc;
 }
 int db_exec(sqlite3 *db, const char *sql) {
-   Serial.println(sql);
-   long start = micros();
-   int rc = sqlite3_exec(db, sql, callback, (void*)data, &zErrMsg);
-   if (rc != SQLITE_OK) {
-       Serial.printf("SQL error: %s\n", zErrMsg);
-       sqlite3_free(zErrMsg);
-   } else {
-       Serial.printf("Operation exc done successfully\n");
-   }
-   Serial.print(F("Time taken to execute query ms: "));
-   Serial.println((micros() - start) / 1000);
-   return rc;
+    // print query to serial
+    Serial.println(" ");
+    Serial.println(sql);
+    // execute query
+    long start = micros();
+    int rc = sqlite3_exec(db, sql, callback, (void*)data, &zErrMsg);
+    // print error if any
+    if (rc != SQLITE_OK) {
+        Serial.printf("SQL error: %s\n", zErrMsg);
+        sqlite3_free(zErrMsg);
+    } else {
+        Serial.printf("Operation exc done successfully\n");
+    }
+    // manage failed query
+    if (rc != SQLITE_OK) {
+        sqlite3_close(db);
+        // open database again
+        rc = openDb("/sd/bme280.db", &db);
+        if (rc) {
+            Serial.println("Can't open database");
+            return rc;
+        }
+        return rc;
+    }
+    // print time taken to execute query
+    Serial.print(F("Time taken to execute query ms: "));
+    Serial.println((micros() - start) / 1000);
+    return rc;
 }
 #endif
