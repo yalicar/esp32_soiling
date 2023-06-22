@@ -10,7 +10,6 @@ float humidity_bme280;
 float pressure_bme280;
 float altitude_bme280;
 
-
 // Function setup bme280 sensor function
 void setup_bme280() {
   Serial.begin(115200);
