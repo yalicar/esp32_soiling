@@ -52,6 +52,4 @@ String get_time() {
   return String(strftime_buf);
 }
 
-
-
 #endif
